@@ -10,7 +10,6 @@ class MessageForm extends Component {
     node.value = ''
   }
   render(){
-    console.log(this.props.activeChannel)
     return (
       <form onSubmit={this.onSubmit.bind(this)}>
         <div className='form-group'>
