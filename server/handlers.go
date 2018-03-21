@@ -1,8 +1,10 @@
 package main
 
 import (
+	"time"
+
+	r "github.com/dancannon/gorethink"
 	"github.com/mitchellh/mapstructure"
-	r "gopkg.in/gorethink/gorethink.v4"
 )
 
 const (
@@ -10,6 +12,24 @@ const (
 	UserStop
 	MessageStop
 )
+
+type Channel struct {
+	ID   string `json:"id" gorethink:"id,omitempty"`
+	Name string `json:"name" gorethink:"name"`
+}
+
+type User struct {
+	ID   string `json:"id" gorethink:"id,omitempty"`
+	Name string `json:"name" gorethink:"name"`
+}
+
+type ChannelMessage struct {
+	ID        string    `json:"id" gorethink:"id,omitempty"`
+	Name      string    `json:"name" gorethink:"name"`
+	Body      string    `json:"body" gorethink:"body"`
+	Author    string    `json:"author" gorethink:"author"`
+	CreatedAt time.Time `json:"createdAt" gorethink:"createdAt"`
+}
 
 func addChannel(client *Client, data interface{}) {
 	var channel Channel
@@ -90,6 +110,59 @@ func subscribeUser(client *Client, data interface{}) {
 
 func unsubscribeUser(client *Client, data interface{}) {
 	client.StopForKey(UserStop)
+}
+
+func addChannelMessage(client *Client, data interface{}) {
+	var channelMessage ChannelMessage
+
+	err := mapstructure.Decode(data, &channelMessage)
+	if err != nil {
+		client.send <- Message{"error", err.Error()}
+		return
+	}
+
+	go func() {
+		channelMessage.CreatedAt = time.Now()
+		channelMessage.Author = client.userName
+		err := r.Table("message").
+			Insert(channelMessage).
+			Exec(client.session)
+		if err != nil {
+			client.send <- Message{"error", err.Error()}
+		}
+	}()
+}
+
+func subscribeChannelMessage(client *Client, data interface{}) {
+	go func() {
+		eventData := data.(map[string]interface{})
+		val, ok := eventData["channelId"]
+		if !ok {
+			return
+		}
+		channelId, ok := val.(string)
+		if !ok {
+			return
+		}
+
+		stop := client.NewStopChannel(ChannelStop)
+
+		cursor, err := r.Table("message").
+			OrderBy(r.OrderByOpts{Index: r.Desc("createdAt")}).
+			Filter(r.Row.Field("channelId").Eq(channelId)).
+			Changes(r.ChangesOpts{IncludeInitial: true}).
+			Run(client.session)
+		if err != nil {
+			client.send <- Message{"error", err.Error()}
+			return
+		}
+
+		changeFeedHelper(cursor, "message", client.send, stop)
+	}()
+}
+
+func unsubscribeChannelMessage(client *Client, data interface{}) {
+	client.StopForKey(MessageStop)
 }
 
 func changeFeedHelper(cursor *r.Cursor, changeEventName string, send chan<- Message, stop <-chan bool) {

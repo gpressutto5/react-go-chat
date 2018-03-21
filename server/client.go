@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
+	r "github.com/dancannon/gorethink"
 	"github.com/gorilla/websocket"
-	r "gopkg.in/gorethink/gorethink.v4"
 )
 
 type FindHandler func(string) (Handler, bool)

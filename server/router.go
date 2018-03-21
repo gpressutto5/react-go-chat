@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	r "github.com/dancannon/gorethink"
 	"github.com/gorilla/websocket"
-	r "gopkg.in/gorethink/gorethink.v4"
 )
 
 type Handler func(*Client, interface{})
