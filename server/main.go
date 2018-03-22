@@ -3,14 +3,21 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	r "github.com/dancannon/gorethink"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	session, err := r.Connect(r.ConnectOpts{
-		Address:  "localhost:28015",
-		Database: "chat",
+		Address:  os.Getenv("RETHINKDB_ADDRESS"),
+		Database: os.Getenv("RETHINKDB_DATABASE"),
 	})
 	if err != nil {
 		log.Panic(err.Error())
@@ -31,5 +38,5 @@ func main() {
 	router.Handle("message unsubscribe", unsubscribeChannelMessage)
 
 	http.Handle("/", router)
-	http.ListenAndServe(":4000", nil)
+	http.ListenAndServe(":"+os.Getenv("HTTP_PORT"), nil)
 }
