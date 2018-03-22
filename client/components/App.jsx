@@ -16,7 +16,7 @@ class App extends Component {
     }
   }
   componentDidMount(){
-    let socket = this.socket = new Socket()
+    let socket = this.socket = new Socket(new WebSocket('ws://localhost:4000'))
     socket.on('connect', this.onConnect.bind(this))
     socket.on('disconnect', this.onDisconnect.bind(this))
     socket.on('channel add', this.onAddChannel.bind(this))
@@ -40,7 +40,7 @@ class App extends Component {
   }
   onEditUser(editedUser){
     let {users} = this.state
-    users.map(user => {
+    users = users.map(user => {
       if (editedUser.id === user.id) {
         return editedUser
       }
@@ -70,9 +70,9 @@ class App extends Component {
   }
   setChannel(activeChannel){
     this.setState({activeChannel})
-    this.socket.emmit('message unsubscribe')
+    this.socket.emit('message unsubscribe')
     this.setState({messages: []})
-    this.socket.emmit('message subscribe', {channelId: activeChannel.id})
+    this.socket.emit('message subscribe', {channelId: activeChannel.id})
   }
   setUserName(name){
     this.socket.emit('user edit', {name})
@@ -80,7 +80,7 @@ class App extends Component {
   addMessage(body){
     let {activeChannel} = this.state
     this.socket.emit('message add', {
-      channelId: activeChannel,
+      channelId: activeChannel.id,
       body
     })
   }

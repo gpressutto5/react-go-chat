@@ -25,7 +25,7 @@ type User struct {
 
 type ChannelMessage struct {
 	ID        string    `json:"id" gorethink:"id,omitempty"`
-	Name      string    `json:"name" gorethink:"name"`
+	ChannelID string    `json:"channelId" gorethink:"channelId"`
 	Body      string    `json:"body" gorethink:"body"`
 	Author    string    `json:"author" gorethink:"author"`
 	CreatedAt time.Time `json:"createdAt" gorethink:"createdAt"`

@@ -51,6 +51,7 @@ func (client *Client) Close() {
 		ch <- true
 	}
 	close(client.send)
+	r.Table("user").Get(client.id).Delete().Exec(client.session)
 }
 
 func (client *Client) StopForKey(key int) {
